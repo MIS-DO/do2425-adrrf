@@ -1,0 +1,19 @@
+name: "Dior Homme"
+brand: "Dior"
+type: "Eau de Parfum"
+notes:
+  top:
+    - "Bergamot"
+    - "Lavender"
+    - "Sage"
+  middle:
+    - "Iris"
+    - "Cocoa"
+    - "Amber"
+  base:
+    - "Leather"
+    - "Patchouli"
+    - "Vetiver"
+gender: "Masculine"
+release_year: 2011
+owned: true
