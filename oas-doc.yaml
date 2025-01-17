@@ -1,0 +1,144 @@
+openapi: 3.1.0
+info:
+  version: 1.0.0
+  title: Fragance API
+  description: A API to register fragances. Generated with OAS TOOLS CLI
+
+paths:
+  /api/v1/fragance:
+    get:
+      description: Returns all fragances
+      operationId: getFragances
+      responses:
+        200:
+          description: Fragance list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/fragance"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+    post:
+      description: Creates a new fragance
+      operationId: addFragance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/fragance"
+        description: Fragance to be created
+        required: true
+      responses:
+        201:
+          description: Fragance
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+  /api/v1/fragance/{name}:
+    get:
+      description: Returns a single fragance by its name
+      operationId: findByname
+      parameters:
+        - required: true
+          name: name
+          description: name of the fragance to fetch
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Fragance found by name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/fragance"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+    put:
+      description: Update a fragance based on its name
+      operationId: updateFragance
+      parameters:
+        - required: true
+          name: name
+          description: name of the fragance to update
+          in: path
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/fragance"
+        description: Fragance to be updated
+        required: true
+      responses:
+        204:
+          description: Fragance updated
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+    delete:
+      description: Deletes a single fragance based on its name
+      operationId: deleteFragance
+      parameters:
+        - required: true
+          name: name
+          description: name of the fragance to delete
+          in: path
+          schema:
+            type: string
+      responses:
+        204:
+          description: Fragance deleted
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+
+components:
+  schemas:
+    fragance:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        brand:
+          type: string
+        type:
+          type: string
+        notes:
+          type: object
+        gender:
+          type: string
+        release_year:
+          type: number
+        owned:
+          type: boolean
+    error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+      additionalProperties: true
