@@ -5,7 +5,7 @@ const assert = require("assert");
 const path = require("path");
 
 const dbPath = "data/";
-const dbFileName = path.join(__dirname, dbPath, "contacts.db");
+const dbFileName = path.join(__dirname, dbPath, "fragances.db");
 
 let dbInstance;
 

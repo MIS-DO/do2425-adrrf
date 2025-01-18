@@ -126,8 +126,21 @@ components:
           type: string
         type:
           type: string
-        notes:
-          type: object
+          notes:
+            type: "object"
+            properties:
+              top:
+                type: "array"
+                items:
+                  type: "string"
+              middle:
+                type: "array"
+                items:
+                  type: "string"
+              base:
+                type: "array"
+                items:
+                  type: "string"
         gender:
           type: string
         release_year:
