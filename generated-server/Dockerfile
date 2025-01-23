@@ -13,7 +13,7 @@ RUN npm install
 # RUN npm install --only=production
 
 # use a volume to mount the data directory
-VOLUME /usr/src/app/data
+VOLUME /usr/src/app/logs
 
 # Bundle app source
 COPY . .

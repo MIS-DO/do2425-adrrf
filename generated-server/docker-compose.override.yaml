@@ -1,0 +1,15 @@
+services:
+  mongo:
+    command: ["--logpath", "/var/log/mongodb/db.log"]
+    volumes:
+      - datavol:/data/db
+      - logsvol:/var/log/mongodb
+  fragance-api:
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - logsvol:/usr/src/app/logs
+volumes:
+  logsvol:
+    external: true
+  datavol:
