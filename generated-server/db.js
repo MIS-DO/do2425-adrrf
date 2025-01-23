@@ -107,6 +107,9 @@ async function insertOne(doc) {
 
 async function updateOne(query, update) {
   const collection = await connect();
+  if (update._id) {
+    delete update._id;
+  }
   return collection.updateOne(query, { $set: update });
 }
 
