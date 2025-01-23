@@ -1,155 +1,135 @@
-"use strict";
+const { MongoClient } = require("mongodb");
+const logger = require("./logger");
 
-const Datastore = require("nedb");
-const assert = require("assert");
-const path = require("path");
+const uri = process.env.MONGO_URI;
+const dbName = process.env.DB_NAME;
+const collectionName = process.env.COLLECTION_NAME;
 
-const dbPath = "data/";
-const dbFileName = path.join(__dirname, dbPath, "fragances.db");
+let client;
+let db;
+let collection;
 
-let dbInstance;
-
-/**
- * Connects to the database and initializes the connection if not already established.
- * @param {Function} callback - Callback function to handle the connection.
- */
-function connect(callback) {
-  if (dbInstance) {
-    console.warn("Database connection already exists!");
-    return callback(null, dbInstance);
+async function connect() {
+  try {
+    if (!client) {
+      client = new MongoClient(uri);
+      await client.connect();
+      db = client.db(dbName);
+      collection = db.collection(collectionName);
+      logger.info("Successfully connected to MongoDB.");
+    }
+    return collection;
+  } catch (error) {
+    logger.error("Error connecting to MongoDB:", error);
+    throw error;
   }
-
-  dbInstance = new Datastore({
-    filename: dbFileName,
-    autoload: true,
-  });
-  return callback(null, dbInstance);
 }
 
-/**
- * Retrieves the current database connection.
- * @returns {Datastore} The current database instance.
- * @throws Will throw an error if the connection has not been established.
- */
-function getConnection() {
-  assert.ok(
-    dbInstance,
-    "Database connection not established. Please call connect() first.",
-  );
-  return dbInstance;
-}
-
-/**
- * Initializes the database with sample data.
- * @returns {Promise} Resolves when the sample data is inserted.
- */
 async function init() {
-  const sampleFragrances = [
-    {
-      name: "Creeed Aventus",
-      brand: "Creeed",
-      type: "Eau de Parfum",
-      notes: {
-        top: ["Pineapple", "Bergamot", "Blackcurrant"],
-        middle: ["Birch", "Patchouli", "Rose"],
-        base: ["Musk", "Oakmoss", "Vanilla"],
-      },
-      gender: "Masculine",
-      release_year: 2010,
-      owned: true,
-    },
-    {
-      name: "Tom Ford Oud Wood",
-      brand: "Tom Ford",
-      type: "Eau de Parfum",
-      notes: {
-        top: ["Rosewood", "Cardamom", "Chinese pepper"],
-        middle: ["Oud", "Sandalwood", "Vetiver"],
-        base: ["Tonka bean", "Vanilla", "Amber"],
-      },
-      gender: "Masculine",
-      release_year: 2007,
-      owned: true,
-    },
-    {
-      name: "Layton",
-      brand: "Parfums de Marly",
-      type: "Eau de Parfum",
-      notes: {
-        top: ["Apple", "Bergamot", "Lavender"],
-        middle: ["Jasmine", "Geranium", "Violet"],
-        base: ["Vanilla", "Sandalwood", "Cardamom"],
-      },
-      gender: "Masculine",
-      release_year: 2016,
-      owned: false,
-    },
-    {
-      name: "Baccarat Rouge 540",
-      brand: "Maison Francis Kurkdjian",
-      type: "Eau de Parfum",
-      notes: {
-        top: ["Saffron", "Jasmine", "Amberwood"],
-        middle: ["Ambergris", "Fir resin", "Cedar"],
-        base: ["Musk", "Oakmoss", "Vanilla"],
-      },
-      gender: "Unisex",
-      release_year: 2015,
-      owned: false,
-    },
-  ];
+  try {
+    const collection = await connect();
+    const count = await collection.countDocuments();
 
-  return new Promise((resolve, reject) => {
-    getConnection().insert(sampleFragrances, (err, docs) => {
-      if (err) return reject(err);
-      resolve(docs);
-    });
-  });
+    if (count === 0) {
+      const sampleFragrances = [
+        {
+              name: "Creeed Aventus",
+              brand: "Creeed",
+              type: "Eau de Parfum",
+              notes: {
+                top: ["Pineapple", "Bergamot", "Blackcurrant"],
+                middle: ["Birch", "Patchouli", "Rose"],
+                base: ["Musk", "Oakmoss", "Vanilla"],
+              },
+              gender: "Masculine",
+              release_year: 2010,
+              owned: true,
+            },
+            {
+              name: "Tom Ford Oud Wood",
+              brand: "Tom Ford",
+              type: "Eau de Parfum",
+              notes: {
+                top: ["Rosewood", "Cardamom", "Chinese pepper"],
+                middle: ["Oud", "Sandalwood", "Vetiver"],
+                base: ["Tonka bean", "Vanilla", "Amber"],
+              },
+              gender: "Masculine",
+              release_year: 2007,
+              owned: true,
+            },
+            {
+              name: "Layton",
+              brand: "Parfums de Marly",
+              type: "Eau de Parfum",
+              notes: {
+                top: ["Apple", "Bergamot", "Lavender"],
+                middle: ["Jasmine", "Geranium", "Violet"],
+                base: ["Vanilla", "Sandalwood", "Cardamom"],
+              },
+              gender: "Masculine",
+              release_year: 2016,
+              owned: false,
+            },
+            {
+              name: "Baccarat Rouge 540",
+              brand: "Maison Francis Kurkdjian",
+              type: "Eau de Parfum",
+              notes: {
+                top: ["Saffron", "Jasmine", "Amberwood"],
+                middle: ["Ambergris", "Fir resin", "Cedar"],
+                base: ["Musk", "Oakmoss", "Vanilla"],
+              },
+              gender: "Unisex",
+              release_year: 2015,
+              owned: false,
+            },
+      ];
+
+      await collection.insertMany(sampleFragrances);
+      logger.info("Sample data initialized successfully");
+    }
+  } catch (error) {
+    logger.error("Error initializing database:", error);
+    throw error;
+  }
 }
 
-/**
- * Executes a query on the database.
- * @param {Object} query - The query object.
- * @param {Function} callback - Callback function to handle the results.
- */
-function find(query, callback) {
-  getConnection().find(query, callback);
+async function find(query) {
+  const collection = await connect();
+  return collection.find(query).toArray();
 }
 
-/**
- * Inserts a new document into the database.
- * @param {Object} doc - The document to insert.
- * @param {Function} callback - Callback function to handle the result.
- */
-function insert(doc, callback) {
-  getConnection().insert(doc, callback);
+async function insertOne(doc) {
+  const collection = await connect();
+  return collection.insertOne(doc);
 }
 
-/**
- * Updates a document in the database that matches the query.
- * @param {Object} query - The query object.
- * @param {Object} newDoc - The new document values.
- * @param {Function} callback - Callback function to handle the result.
- */
-function update(query, newDoc, callback) {
-  getConnection().update(query, newDoc, callback);
+async function updateOne(query, update) {
+  const collection = await connect();
+  return collection.updateOne(query, { $set: update });
 }
 
-/**
- * Removes a document from the database.
- * @param {Object} query - The query object.
- * @param {Function} callback - Callback function to handle the result.
- */
-function remove(query, callback) {
-  getConnection().remove(query, callback);
+async function deleteOne(query) {
+  const collection = await connect();
+  return collection.deleteOne(query);
+}
+
+async function close() {
+  if (client) {
+    await client.close();
+    client = null;
+    db = null;
+    collection = null;
+  }
 }
 
 module.exports = {
   connect,
-  getConnection,
   init,
   find,
-  insert,
-  update,
-  remove,
+  insertOne,
+  updateOne,
+  deleteOne,
+  close
 };

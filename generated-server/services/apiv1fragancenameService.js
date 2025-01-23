@@ -1,109 +1,107 @@
 const db = require("../db");
+const logger = require("../logger");
 
 module.exports = {
-  /**
-   * Finds a fragrance by name.
-   * @param {Object} req - The request object.
-   * @param {Object} res - The response object.
-   */
-  findByname: (req, res) => {
-    const { name } = req.params;
+  findByname: async (req, res) => {
+    try {
+      const { name } = req.params;
 
-    if (!name) {
-      return res.status(400).send({ message: "Name parameter is required." });
-    }
 
-    db.find({ name: new RegExp(`^${name}$`, "i") }, (err, result) => {
-      if (err) {
-        return res.status(500).send(err);
+      if (!name) {
+        logger.warn("New GET request to /fragances/:name without name, sending 400...");
+        return res.status(400).send({ message: "Name parameter is required." });
       }
+      logger.info("New GET request to /fragances/" + name);
+      const result = await db.find({ name: new RegExp(`^${name}$`, "i") });
 
       if (result.length === 0) {
+        logger.warn("There are no fragances with name " + name);
         return res
           .status(404)
           .send({ message: "No fragrance found with the given name." });
       }
 
-      return res.status(200).send(result);
-    });
+      console.debug("Sending contact: " + JSON.stringify(contact, 2, null));
+      res.status(200).send(result);
+    } catch (err) {
+      logger  .error('Error getting data from DB');
+      res.status(500).send({ message: "Error finding fragrance", error: err });
+    }
   },
 
-  /**
-   * Updates a fragrance by name.
-   * @param {Object} req - The request object.
-   * @param {Object} res - The response object.
-   */
-  updateFragance: (req, res) => {
-    const updatedFragance = req.body;
-    console.log(updatedFragance);
-    const { name } = req.params;
+  updateFragance: async (req, res) => {
+    try {
+      const updatedFragance = req.body;
+      const { name } = req.params;
 
-    if (!updatedFragance) {
-      return res.status(400).send({ message: "Request body is missing." });
-    }
-
-    // Validate that all necessary fields are present in the update request
-    const requiredFields = [
-      "name",
-      "brand",
-      "type",
-      "notes",
-      "gender",
-      "release_year",
-      "owned",
-    ];
-
-    const missingFields = requiredFields.filter(
-      (field) => !(field in updatedFragance),
-    );
-
-    if (missingFields.length > 0) {
-      return res
-        .status(422)
-        .send({ message: `Missing fields: ${missingFields.join(", ")}` });
-    }
-
-    db.find({ name }, (err, fragrances) => {
-      if (err) {
-        return res.status(500).send(err);
+      if (!updatedFragance) {
+        logger.warn("New PUT request to /fragances/:name without body, sending 400...");
+        return res.status(400).send({ message: "Request body is missing." });
       }
 
-      if (fragrances.length === 0) {
+      logger.info("New PUT request to /fragances/" + name);
+
+      const requiredFields = [
+        "name",
+        "brand",
+        "type",
+        "notes",
+        "gender",
+        "release_year",
+        "owned",
+      ];
+
+      const missingFields = requiredFields.filter(
+        (field) => !(field in updatedFragance)
+      );
+
+      if (missingFields.length > 0) {
+        logger.warn(
+          "New PUT request to /fragances/:name without all required fields, sending 422..."
+        );
+        return res
+          .status(422)
+          .send({ message: `Missing fields: ${missingFields.join(", ")}` });
+      }
+
+      const existing = await db.find({ name });
+
+      if (existing.length === 0) {
+        logger.warn("Fragrance not found");
         return res.status(404).send({ message: "Fragrance not found." });
       }
 
-      db.update({ name }, updatedFragance, (err) => {
-        if (err) {
-          return res.status(500).send(err);
-        }
+      logger.debug("Updating fragrance with name " + name);
 
-        return res.status(204).send();
-      });
-    });
+      await db.updateOne({ name }, updatedFragance);
+      res.status(204).send();
+    } catch (err) {
+      logger.error("Error updating fragrance");
+      res.status(500).send({ message: "Error updating fragrance", error: err });
+    }
   },
 
-  /**
-   * Deletes a fragrance by name.
-   * @param {Object} req - The request object.
-   * @param {Object} res - The response object.
-   */
-  deleteFragance: (req, res) => {
-    const { name } = req.params;
+  deleteFragance: async (req, res) => {
+    try {
+      const { name } = req.params;
 
-    if (!name) {
-      return res.status(400).send({ message: "Name parameter is required." });
-    }
-
-    db.remove({ name }, (err, numRemoved) => {
-      if (err) {
-        return res.status(500).send(err);
+      if (!name) {
+        logger.warn("New DELETE request to /fragances/:name without name, sending 400...");
+        return res.status(400).send({ message: "Name parameter is required." });
       }
+      logger.info("New DELETE request to /fragances/" + name);
+      const result = await db.deleteOne({ name });
 
-      if (numRemoved === 0) {
+      if (result.deletedCount === 0) {
+        logger.warn("Fragrance not found");
         return res.status(404).send({ message: "Fragrance not found." });
       }
 
-      return res.status(204).send();
-    });
+      logger.debug("Deleting fragrance with name " + name);
+      res.status(204).send();
+    } catch (err) {
+      logger.error("Error deleting fragrance");
+      res.status(500).send({ message: "Error deleting fragrance", error: err });
+    }
   },
 };

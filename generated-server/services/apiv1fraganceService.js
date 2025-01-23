@@ -1,65 +1,55 @@
 const db = require("../db");
-
+const logger = require("../logger");
 module.exports = {
-  /**
-   * Retrieves all fragrances from the database.
-   * @param {Object} req - The request object.
-   * @param {Object} res - The response object.
-   */
-  getFragances: (req, res) => {
-    db.find({}, (err, result) => {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        res.status(200).send(result);
-      }
-    });
+  getFragances: async (req, res) => {
+    try {
+      logger.info("New GET request to /fragances");
+      const result = await db.find({});
+      logger.debug("Sending fragances: " + JSON.stringify(result, 2, null));
+      res.status(200).send(result);
+    } catch (err) {
+      logger.error("Error getting data from DB");
+      res.status(500).send({ message: "Error retrieving fragrances", error: err });
+    }
   },
 
-  /**
-   * Adds a new fragrance to the database.
-   * @param {Object} req - The request object.
-   * @param {Object} res - The response object.
-   */
-  addFragance: (req, res) => {
-    const newFragance = req.body;
+  addFragance: async (req, res) => {
+    try {
+      const newFragance = req.body;
+      const requiredFields = [
+        "name",
+        "brand",
+        "type",
+        "notes",
+        "gender",
+        "release_year",
+        "owned",
+      ];
 
-    // Sample fragrance structure for validation
-    const sampleFragance = {
-      name: "Layton",
-      brand: "Parfums de Marly",
-      type: "Eau de Parfum",
-      notes: {
-        top: ["Apple", "Bergamot", "Lavender"],
-        middle: ["Jasmine", "Geranium", "Violet"],
-        base: ["Vanilla", "Sandalwood", "Cardamom"],
-      },
-      gender: "Masculine",
-      release_year: 2016,
-      owned: false,
-    };
+      const missingFields = requiredFields.filter(
+        (field) => !newFragance.hasOwnProperty(field)
+      );
 
-    const requiredFields = Object.keys(sampleFragance);
-    const missingFields = requiredFields.filter(
-      (field) => !newFragance.hasOwnProperty(field),
-    );
-
-    if (missingFields.length > 0) {
-      res.status(400).send({
-        message: "Invalid data. Missing required fields.",
-        missingFields,
-      });
-      return;
-    }
-
-    db.insert(newFragance, (err, result) => {
-      if (err) {
-        res.status(500).send(err);
-      } else {
-        res
-          .status(201)
-          .send({ message: "Fragrance added successfully!", data: result });
+      if (missingFields.length > 0) {
+        logger.warn(
+          "New POST request to /fragances without all required fields, sending 400..."
+        );
+        return res.status(400).send({
+          message: "Invalid data. Missing required fields.",
+          missingFields,
+        });
       }
-    });
+      logger.info("New POST request to /fragances");
+
+      const result = await db.insertOne(newFragance);
+      logger.debug("Fragrance added: " + JSON.stringify(newFragance, 2, null));
+      res.status(201).send({
+        message: "Fragrance added successfully!",
+        data: { ...newFragance, _id: result.insertedId },
+      });
+    } catch (err) {
+      logger.error("Error getting data from DB");
+      res.status(500).send({ message: "Error adding fragrance", error: err });
+    }
   },
 };

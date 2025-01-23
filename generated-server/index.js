@@ -2,7 +2,7 @@ const http = require("http");
 const express = require("express");
 const { initialize } = require("@oas-tools/core");
 
-const serverPort = 8080;
+const serverPort = process.env.PORT || 8080;
 const app = express();
 
 app.use(express.json({ limit: "50mb" }));
@@ -17,53 +17,48 @@ const config = {
 };
 
 const db = require("./db");
+const logger = require("./logger");
 
 // Initialize database connection
-(async () => {
+async function initializeApp() {
   try {
-    console.info("Initializing DB...");
+    logger.info("Initializing DB...");
+    await db.init();
 
-    const _db = await new Promise((resolve, reject) => {
-      db.connect((err, dbInstance) => {
-        if (err) return reject(err);
-        resolve(dbInstance);
-      });
+    await initialize(app, config);
+
+    const server = http.createServer(app);
+    server.listen(serverPort, () => {
+      logger.info(`\nApp running at http://localhost:${serverPort}`);
+      logger.info(
+        "________________________________________________________________"
+      );
+
+      if (!config?.middleware?.swagger?.disable) {
+        logger.info(
+          `API docs (Swagger UI) available on http://localhost:${serverPort}/docs`
+        );
+        logger.info(
+          "________________________________________________________________"
+        );
+      }
     });
-
-    const contacts = await new Promise((resolve, reject) => {
-      db.find({}, (err, result) => {
-        if (err) return reject(err);
-        resolve(result);
-      });
-    });
-
-    if (contacts.length === 0) {
-      console.info("Empty DB, loading initial data...");
-      db.init();
-    } else {
-      console.info(`DB already has ${contacts.length} contacts.`);
-    }
   } catch (error) {
-    console.error("Error during DB initialization!", error);
+    logger.error("Error during initialization:", error);
+    process.exit(1);
   }
-})();
+}
 
-initialize(app, config).then(() => {
-  const server = http.createServer(app);
+initializeApp();
 
-  server.listen(serverPort, () => {
-    console.log(`\nApp running at http://localhost:${serverPort}`);
-    console.log(
-      "________________________________________________________________",
-    );
-
-    if (!config?.middleware?.swagger?.disable) {
-      console.log(
-        `API docs (Swagger UI) available on http://localhost:${serverPort}/docs`,
-      );
-      console.log(
-        "________________________________________________________________",
-      );
-    }
-  });
+// Handle cleanup on application shutdown
+process.on('SIGINT', async () => {
+  try {
+    await db.close();
+    logger.info('Database connection closed.');
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during cleanup:', error);
+    process.exit(1);
+  }
 });
