@@ -1,0 +1,84 @@
+services:
+  fragance-dev:
+    build: .
+    container_name: fragance-dev
+    depends_on:
+      - mongo-dev
+    environment:
+      - MONGO_HOST=mongo-dev
+      - MONGO_PORT=27017
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - COLLECTION_NAME=${COLLECTION_NAME}
+      - NODE_ENV=production
+      - PORT=${PORT}
+      - VIRTUAL_HOST=dev.fragance.local
+    networks:
+      - app-network
+
+  mongo-dev:
+    image: mongo
+    container_name: mongo-dev
+    volumes:
+      - "./data:/data/db"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${DB_NAME}
+    networks:
+      - app-network
+
+  fragance-prod:
+    build: .
+    container_name: fragance-prod
+    depends_on:
+      - mongo-prod
+    environment:
+      - MONGO_HOST=mongo-prod
+      - MONGO_PORT=27017
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - COLLECTION_NAME=${COLLECTION_NAME}
+      - NODE_ENV=production
+      - PORT=${PORT}
+      - VIRTUAL_HOST=fragance.local
+    networks:
+      - app-network
+
+  mongo-prod:
+    image: mongo
+    container_name: mongo-prod
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${DB_NAME}
+    networks:
+      - app-network
+
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:1.6
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - app-network
+
+  fragance-front:
+    build:
+      context: ../fragance
+      dockerfile: Dockerfile
+    container_name: fragance-front
+    environment:
+      - API_URL=http://fragance-prod:8080/api/v1/fragance
+      - VIRTUAL_HOST=app.fragance.local
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

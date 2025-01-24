@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server'
 import type { Fragrance } from "../../../../types/fragrance"
 
 const fragrances: Fragrance[] = []
 
-export async function GET(request: Request, { params }: { params: { name: string } }) {
-  const fragrance = fragrances.find((f) => f.name === params.name)
+export async function GET(req: NextRequest) {
+  const name = req.nextUrl.pathname.split('/').pop() || '';
+  const fragrance = fragrances.find((f) => f.name === name)
   if (fragrance) {
     return NextResponse.json(fragrance)
   } else {
@@ -12,9 +13,10 @@ export async function GET(request: Request, { params }: { params: { name: string
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { name: string } }) {
-  const updatedFragrance: Fragrance = await request.json()
-  const index = fragrances.findIndex((f) => f.name === params.name)
+export async function PUT(req: NextRequest) {
+  const name = req.nextUrl.pathname.split('/').pop() || '';
+  const updatedFragrance: Fragrance = await req.json()
+  const index = fragrances.findIndex((f) => f.name === name)
   if (index !== -1) {
     fragrances[index] = updatedFragrance
     return new NextResponse(null, { status: 204 })
@@ -23,8 +25,9 @@ export async function PUT(request: Request, { params }: { params: { name: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { name: string } }) {
-  const index = fragrances.findIndex((f) => f.name === params.name)
+export async function DELETE(req: NextRequest) {
+  const name = req.nextUrl.pathname.split('/').pop() || '';
+  const index = fragrances.findIndex((f) => f.name === name)
   if (index !== -1) {
     fragrances.splice(index, 1)
     return new NextResponse(null, { status: 204 })
@@ -32,4 +35,3 @@ export async function DELETE(request: Request, { params }: { params: { name: str
     return new NextResponse(null, { status: 404 })
   }
 }
-
