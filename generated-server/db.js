@@ -7,8 +7,8 @@ const password = process.env.MONGO_INITDB_ROOT_PASSWORD;
 const dbName = process.env.DB_NAME;
 const collectionName = process.env.COLLECTION_NAME;
 
-const uri = `mongodb://${username}:${password}@${host}:${port}/${dbName}?authSource=admin`;
-console.log(uri)
+const uri = process.env.MONGO_URI || `mongodb://${username}:${password}@${host}:${port}/${dbName}?authSource=admin`;
+
 let client;
 let db;
 let collection;
