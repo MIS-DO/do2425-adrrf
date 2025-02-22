@@ -7,6 +7,10 @@ const app = express();
 
 app.use(express.json({ limit: "50mb" }));
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 const config = {
   oasFile: "./api/oas-doc.yaml",
   middleware: {
