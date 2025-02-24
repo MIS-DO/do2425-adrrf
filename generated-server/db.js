@@ -1,5 +1,8 @@
 const { MongoClient } = require("mongodb");
 
+const dotenv = require("dotenv");
+dotenv.config();
+
 const host = process.env.MONGO_HOST;
 const port = process.env.MONGO_PORT;
 const username = process.env.MONGO_INITDB_ROOT_USERNAME;

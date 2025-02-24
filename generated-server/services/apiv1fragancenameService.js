@@ -12,7 +12,7 @@ module.exports = {
         return res.status(400).send({ message: "Name parameter is required." });
       }
       logger.info("New GET request to /fragances/" + name);
-      const result = await db.find({ name: new RegExp(`^${name}$`, "i") });
+      const result = await db.find({ name });
 
       if (result.length === 0) {
         logger.warn("There are no fragances with name " + name);
@@ -21,10 +21,11 @@ module.exports = {
           .send({ message: "No fragrance found with the given name." });
       }
 
-      console.debug("Sending contact: " + JSON.stringify(contact, 2, null));
+      console.debug("Sending fragance: " + JSON.stringify(result, 2, null));
       res.status(200).send(result);
     } catch (err) {
-      logger  .error('Error getting data from DB');
+      console.log(err);
+      logger.error('Error getting data from DB');
       res.status(500).send({ message: "Error finding fragrance", error: err });
     }
   },
