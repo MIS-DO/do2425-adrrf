@@ -17,6 +17,9 @@ const config = {
     security: {
       auth: {},
     },
+    swagger: {
+      path: "/fragance"
+    }
   },
 };
 
